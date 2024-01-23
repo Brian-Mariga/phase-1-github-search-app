@@ -3,33 +3,18 @@ const searchInput = document.getElementById("search");
 const userList = document.getElementById("user-list");
 const reposList = document.getElementById("repos-list");
 
-githubForm.addEventListener("submit", function (e) {
+githubForm.addEventListener("submit", (e) => {
   e.preventDefault();
   const searchTerm = searchInput.value.trim();
-
-  if (searchTerm) {
-    searchUsers(searchTerm);
-  }
+  searchUsers(searchTerm);
 });
 
-async function searchUsers(username) {
-  const userSearchEndpoint = `https://api.github.com/search/users?q=${username}`;
-  try {
-    const response = await fetch(userSearchEndpoint, {
-      headers: {
-        Accept: "application/vnd.github.v3+json",
-      },
+function searchUsers(username) {
+  fetch(`https://api.github.com/search/users?q=${username}`)
+    .then((res) => res.json())
+    .then((data) => {
+      displayUsers(data.items);
     });
-
-    if (!response.ok) {
-      throw new Error(`GitHub API Error: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    displayUsers(data.items);
-  } catch (error) {
-    console.error("Error fetching user data:", error);
-  }
 }
 
 function displayUsers(users) {
@@ -38,45 +23,32 @@ function displayUsers(users) {
   users.forEach((user) => {
     const listItem = document.createElement("li");
     listItem.innerHTML = `
-            <img src="${user.avatar_url}" alt="${user.login}" />
-            <p>${user.login}</p>
-            <a href="#" data-repos-url="${user.repos_url}">View Repositories</a>
-          `;
+    <img src="${user.avatar_url}" alt="${user.login}">
+    <p>${user.login}</p>
+    `;
     userList.appendChild(listItem);
 
-    listItem.querySelector("a").addEventListener("click", function (e) {
+    listItem.querySelector("p").addEventListener("click", (e) => {
       e.preventDefault();
-      const reposUrl = this.getAttribute("data-repos-url");
-      fetchUserRepos(reposUrl);
+      searchRepos(user.login);
     });
   });
 }
 
-async function fetchUserRepos(reposUrl) {
-  try {
-    const response = await fetch(reposUrl, {
-      headers: {
-        Accept: "application/vnd.github.v3+json",
-      },
+function searchRepos(username) {
+  fetch(`https://api.github.com/users/${username}/repos`)
+    .then((res) => res.json())
+    .then((data) => {
+      displayRepos(data);
     });
-
-    if (!response.ok) {
-      throw new Error(`GitHub API Error: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    displayUserRepos(data);
-  } catch (error) {
-    console.error("Error fetching user repos:", error);
-  }
 }
 
-function displayUserRepos(repos) {
+function displayRepos(repos) {
   reposList.innerHTML = "";
 
   repos.forEach((repo) => {
-    const listItem = document.createElement("li");
-    listItem.textContent = repo.name;
-    reposList.appendChild(listItem);
+    const li = document.createElement("li");
+    li.textContent = repo.name;
+    reposList.appendChild(li);
   });
 }
